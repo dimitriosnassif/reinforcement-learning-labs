@@ -1,3 +1,4 @@
+from scipy.stats import bernoulli
 
 class Heroes: ## The Fellowship class 
     def __init__(self,
@@ -38,8 +39,13 @@ class Heroes: ## The Fellowship class
         if hero_index < 0 or hero_index >= len(self.heroes):
             raise IndexError("Hero index out of range.")
         
-        ######### WRITE YOUR CODE HERE
-        ...
-        #########
+        hero = self.heroes[hero_index]
+        true_success_probability = hero['true_success_probability']
+
+        reward = bernoulli.rvs(true_success_probability)
+
+        hero['n_quests'] += 1
+        if reward:
+            hero['successes'] += 1
         
         return reward
