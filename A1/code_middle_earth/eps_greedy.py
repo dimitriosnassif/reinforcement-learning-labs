@@ -16,14 +16,14 @@ def eps_greedy(
     :param init_value: Initial estimation of each hero's value.
     :return: 
         - rew_record: The record of rewards at each timestep.
-        - avg_ret_record: The average of rewards up to step t. For example: If 
-    we define `ret_T` = \sum^T_{t=0}{r_t}, `avg_ret_record` = ret_T / (1+T).
+        - avg_ret_record: The average of rewards up to step t. 
         - tot_reg_record: The total regret up to step t.
         - opt_action_record: Percentage of optimal actions selected.
     """
     
     num_heroes = len(heroes.heroes)
-    values = [init_value] * num_heroes    # Initial action values
+    values = [init_value] * num_heroes    # Initial action values (estimated success probabilities)
+    counts = [0] * num_heroes             # Number of times each hero was chosen
     rew_record = []                       # Rewards at each timestep
     avg_ret_record = []                   # Average reward up to each timestep
     tot_reg_record = []                   # Total regret up to each timestep
@@ -32,16 +32,44 @@ def eps_greedy(
     total_rewards = 0
     total_regret = 0
 
-    ######### WRITE YOUR CODE HERE
-    optimal_reward = ...
-    optimal_hero_index = ...
-    ######### 
+    # Find the optimal hero (one with the highest true success probability) and its reward
+    true_probabilities = [hero['true_success_probability'] for hero in heroes.heroes]
+    optimal_hero_index = np.argmax(true_probabilities)  # Index of the optimal hero
+    optimal_reward = true_probabilities[optimal_hero_index]  # Optimal reward (highest true success probability)
     
     for t in range(heroes.total_quests):
-        ######### WRITE YOUR CODE HERE
-        ...
-        #########  
-    
+        # Epsilon-greedy action selection: explore with probability eps, exploit with probability 1 - eps
+        if np.random.random() < eps:
+            # Explore: select a random hero
+            chosen_hero = np.random.randint(0, num_heroes)
+        else:
+            # Exploit: choose the hero with the highest estimated value
+            chosen_hero = np.argmax(values)
+        
+        # Perform the quest with the chosen hero
+        reward = heroes.attempt_quest(chosen_hero)
+        
+        # Update reward and regret records
+        total_rewards += reward
+        regret = optimal_reward - reward
+        total_regret += regret
+        rew_record.append(reward)
+        avg_ret_record.append(total_rewards / (t + 1))
+        tot_reg_record.append(total_regret)
+        
+        # Check if the chosen hero is the optimal one
+        is_optimal_action = (chosen_hero == optimal_hero_index)
+
+        # Update the percentage of optimal actions selected
+        if t == 0:
+            opt_action_record.append(1 if is_optimal_action else 0)
+        else:
+            opt_action_record.append(opt_action_record[-1] + 1 if is_optimal_action else opt_action_record[-1])
+
+        # Update action-value estimate for the chosen hero using incremental mean formula
+        counts[chosen_hero] += 1
+        values[chosen_hero] += (reward - values[chosen_hero]) / counts[chosen_hero]
+
     return rew_record, avg_ret_record, tot_reg_record, opt_action_record
 
 
