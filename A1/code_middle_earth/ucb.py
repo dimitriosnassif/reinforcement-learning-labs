@@ -24,6 +24,7 @@ def ucb(
 
     num_heroes = len(heroes.heroes)
     values = [init_value] * num_heroes   # Initial action values
+    counts = [0] * num_heroes
     rew_record = []                      # Rewards at each timestep
     avg_ret_record = []                  # Average reward up to each timestep
     tot_reg_record = []                  # Total regret up to each timestep
@@ -32,15 +33,39 @@ def ucb(
     total_rewards = 0
     total_regret = 0
 
-    ######### WRITE YOUR CODE HERE
-    optimal_reward = ...
-    optimal_hero_index = ...
-    ######### 
+    true_probabilities = [hero['true_success_probability'] for hero in heroes.heroes]
+    optimal_hero_index = np.argmax(true_probabilities)
+    optimal_reward = true_probabilities[optimal_hero_index]
 
-    for t in range(heroes.total_quests):
-        ######### WRITE YOUR CODE HERE
-        ...
-        #########  
+    for t in range(1, heroes.total_quests + 1):
+        if t <= num_heroes:
+            chosen_hero = t - 1
+        else:
+            ucb_values = [
+                values[i] + c * np.sqrt(np.log(t) / counts[i]) if counts[i] > 0 else float('inf')
+                for i in range(num_heroes)
+            ]
+            chosen_hero = np.argmax(ucb_values)
+        
+        reward = heroes.attempt_quest(chosen_hero)
+
+        total_rewards += reward
+        regret = optimal_reward - reward
+        total_regret += regret
+        rew_record.append(reward)
+        avg_ret_record.append(total_rewards / t)
+        tot_reg_record.append(total_regret)
+
+        is_optimal_action = (chosen_hero == optimal_hero_index)
+        if t == 1:
+            opt_action_record.append(1 if is_optimal_action else 0)
+        else:
+            opt_action_record.append(
+                opt_action_record[-1] + (1 if is_optimal_action else 0)
+            )
+        
+        counts[chosen_hero] += 1
+        values[chosen_hero] += (reward - values[chosen_hero]) / counts[chosen_hero]
     
     return rew_record, avg_ret_record, tot_reg_record, opt_action_record
 

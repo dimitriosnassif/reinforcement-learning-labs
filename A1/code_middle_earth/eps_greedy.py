@@ -38,18 +38,13 @@ def eps_greedy(
     optimal_reward = true_probabilities[optimal_hero_index]  # Optimal reward (highest true success probability)
     
     for t in range(heroes.total_quests):
-        # Epsilon-greedy action selection: explore with probability eps, exploit with probability 1 - eps
         if np.random.random() < eps:
-            # Explore: select a random hero
             chosen_hero = np.random.randint(0, num_heroes)
         else:
-            # Exploit: choose the hero with the highest estimated value
             chosen_hero = np.argmax(values)
         
-        # Perform the quest with the chosen hero
         reward = heroes.attempt_quest(chosen_hero)
         
-        # Update reward and regret records
         total_rewards += reward
         regret = optimal_reward - reward
         total_regret += regret
@@ -57,16 +52,13 @@ def eps_greedy(
         avg_ret_record.append(total_rewards / (t + 1))
         tot_reg_record.append(total_regret)
         
-        # Check if the chosen hero is the optimal one
         is_optimal_action = (chosen_hero == optimal_hero_index)
 
-        # Update the percentage of optimal actions selected
         if t == 0:
             opt_action_record.append(1 if is_optimal_action else 0)
         else:
             opt_action_record.append(opt_action_record[-1] + 1 if is_optimal_action else opt_action_record[-1])
 
-        # Update action-value estimate for the chosen hero using incremental mean formula
         counts[chosen_hero] += 1
         values[chosen_hero] += (reward - values[chosen_hero]) / counts[chosen_hero]
 
