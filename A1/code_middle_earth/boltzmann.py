@@ -65,7 +65,7 @@ def boltzmann(
         if t == 0:
             opt_action_record.append(1 if is_optimal_action else 0)
         else:
-            opt_action_record.append(opt_action_record[-1] + (1 if is_optimal_action else 0))
+            opt_action_record.append((opt_action_record[-1] * t + (1 if is_optimal_action else 0)) / (t + 1))
 
         counts[chosen_hero] += 1
         values[chosen_hero] += (reward - values[chosen_hero]) / counts[chosen_hero]
