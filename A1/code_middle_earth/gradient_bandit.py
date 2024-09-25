@@ -43,15 +43,37 @@ def gradient_bandit(
     total_rewards = 0
     total_regret = 0
 
-    ######### WRITE YOUR CODE HERE
-    optimal_reward = ...
-    optimal_hero_index = ...
-    ######### 
+    true_probabilities = [hero['true_success_probability'] for hero in heroes.heroes]
+    optimal_hero_index = np.argmax(true_probabilities)
+    optimal_reward = true_probabilities[optimal_hero_index]
 
     for t in range(heroes.total_quests):
-        ######### WRITE YOUR CODE HERE
-        ...
-        #########  
+        probs = softmax(h)
+        chosen_hero = np.random.choice(num_heroes, p=probs)
+        reward = heroes.attempt_quest(chosen_hero)
+
+        total_rewards += reward
+        regret = optimal_reward - reward
+        total_regret += regret
+
+        rew_record.append(reward)
+        avg_ret_record.append(total_rewards / (t + 1))
+        tot_reg_record.append(total_regret)
+
+        is_optimal_action = (chosen_hero == optimal_hero_index)
+        if t == 0:
+            opt_action_record.append(1 if is_optimal_action else 0)
+        else:
+            opt_action_record.append(opt_action_record[-1] + (1 if is_optimal_action else 0))
+
+        if use_baseline:
+            reward_bar += (reward - reward_bar) / (t + 1)
+
+        for i in range(num_heroes):
+            if i == chosen_hero:
+                h[i] += alpha * (reward - (reward_bar if use_baseline else 0)) * (1 - probs[i])
+            else:
+                h[i] -= alpha * (reward - (reward_bar if use_baseline else 0)) * probs[i]
     
     return rew_record, avg_ret_record, tot_reg_record, opt_action_record
 
